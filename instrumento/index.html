@@ -1,1 +1,430 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Instrumento de Diagnóstico Arquitectónico — Arqdes</title>
+<meta name="description" content="Pruebas estructurales para verificar el nivel de desacoplamiento en sistemas de gestión documental electrónica. Basado en el libro de Jhon Alexander González Flórez.">
+<meta property="og:title" content="Instrumento de Diagnóstico Arquitectónico — Arquitecturas Acopladas y Desacopladas">
+<meta property="og:description" content="25 pruebas estructurales en 5 dimensiones. Evalúa el nivel de desacoplamiento de tu sistema de gestión documental.">
+<meta property="og:url" content="https://jhon-gonzalez.github.io/diagnostico-arquitectonico-sgdea/instrumento/">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f5f4f0;
+    --bg-tertiary: #efede8;
+    --text-primary: #1a1a18;
+    --text-secondary: #5a5a56;
+    --text-tertiary: #8a8a85;
+    --border: rgba(0,0,0,0.12);
+    --border-md: rgba(0,0,0,0.22);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font: 'IBM Plex Sans', system-ui, sans-serif;
+    --green-bg: #E1F5EE; --green-border: #1D9E75; --green-text: #085041;
+    --amber-bg: #FAEEDA; --amber-border: #BA7517; --amber-text: #633806;
+    --blue-bg: #E6F1FB; --blue-border: #378ADD; --blue-text: #185FA5;
+    --red-bg: #FCEBEB; --red-border: #E24B4A; --red-text: #A32D2D;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --bg-secondary: #242422;
+      --bg-tertiary: #2a2a28;
+      --text-primary: #f0ede8;
+      --text-secondary: #a8a8a0;
+      --text-tertiary: #6a6a65;
+      --border: rgba(255,255,255,0.10);
+      --border-md: rgba(255,255,255,0.20);
+      --green-bg: #04342C; --green-border: #1D9E75; --green-text: #9FE1CB;
+      --amber-bg: #412402; --amber-border: #BA7517; --amber-text: #FAC775;
+      --blue-bg: #042C53; --blue-border: #378ADD; --blue-text: #B5D4F4;
+      --red-bg: #501313; --red-border: #E24B4A; --red-text: #F7C1C1;
+    }
+  }
+
+  body { font-family: var(--font); background: var(--bg); color: var(--text-primary); font-size: 16px; line-height: 1.7; }
+
+  .page { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  .site-header { border-bottom: 0.5px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+  .site-header .brand { font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; }
+  .site-header h1 { font-size: 22px; font-weight: 500; color: var(--text-primary); line-height: 1.3; margin-bottom: 6px; }
+  .site-header p { font-size: 14px; color: var(--text-secondary); max-width: 600px; }
+
+  .nuclear { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 1.25rem 0; padding: 12px 16px; background: var(--bg-secondary); border-radius: var(--radius-md); border: 0.5px solid var(--border); }
+  .nnode { font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: var(--radius-md); background: var(--bg); border: 0.5px solid var(--border-md); color: var(--text-primary); }
+  .narrow { font-size: 12px; color: var(--text-tertiary); }
+
+  .progress-global { margin: 1.5rem 0; }
+  .progress-global .label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .pg-bar { height: 3px; background: var(--bg-tertiary); border-radius: 2px; overflow: hidden; }
+  .pg-fill { height: 100%; background: var(--green-border); border-radius: 2px; transition: width 0.4s; }
+
+  .dim-card { background: var(--bg); border: 0.5px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+  .dim-header { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .dim-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; background: var(--bg-secondary); color: var(--text-secondary); border: 0.5px solid var(--border); transition: all 0.2s; }
+  .dim-title { font-size: 15px; font-weight: 500; color: var(--text-primary); flex: 1; }
+  .dim-meta { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+  .dim-toggle { font-size: 11px; color: var(--text-tertiary); transition: transform 0.2s; }
+  .dim-toggle.open { transform: rotate(180deg); }
+
+  .dim-prog { height: 3px; border-radius: 2px; background: var(--bg-tertiary); margin: 10px 0 0; overflow: hidden; }
+  .dim-prog-fill { height: 100%; background: var(--green-border); border-radius: 2px; transition: width 0.3s; }
+
+  .questions { display: none; margin-top: 12px; }
+  .questions.open { display: block; }
+
+  .q-item { padding: 14px 0; border-top: 0.5px solid var(--border); }
+  .q-num { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; }
+  .q-text { font-size: 14px; color: var(--text-primary); margin-bottom: 8px; line-height: 1.6; }
+
+  details.q-proof-wrap { margin-bottom: 10px; }
+  summary.q-proof-summary { font-size: 11px; color: var(--text-tertiary); cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 4px; }
+  summary.q-proof-summary::after { content: '▼'; font-size: 9px; }
+  details[open] summary.q-proof-summary::after { content: '▲'; }
+  .q-proof-body { font-size: 12px; color: var(--text-secondary); margin-top: 6px; padding: 10px 12px; background: var(--bg-secondary); border-radius: var(--radius-md); border-left: 2px solid var(--border-md); line-height: 1.6; }
+
+  .q-options { display: flex; gap: 6px; flex-wrap: wrap; }
+  .q-btn { font-size: 12px; padding: 5px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-md); background: var(--bg); color: var(--text-secondary); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .q-btn:hover { background: var(--bg-secondary); }
+  .q-btn.sel-si { background: var(--green-bg); border-color: var(--green-border); color: var(--green-text); }
+  .q-btn.sel-parcial { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber-text); }
+  .q-btn.sel-no { background: var(--red-bg); border-color: var(--red-border); color: var(--red-text); }
+  .q-btn.sel-na { background: var(--bg-secondary); border-color: var(--border); color: var(--text-tertiary); }
+
+  .results-panel { background: var(--bg-secondary); border-radius: var(--radius-lg); border: 0.5px solid var(--border); padding: 1.75rem; margin-top: 2rem; }
+  .results-title { font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 1.25rem; }
+
+  .result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .r-card { background: var(--bg); border-radius: var(--radius-md); border: 0.5px solid var(--border); padding: 12px 14px; }
+  .r-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; line-height: 1.3; }
+  .r-val { font-size: 22px; font-weight: 500; color: var(--text-primary); line-height: 1; }
+  .r-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+  .nivel-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; margin-bottom: 10px; border: 0.5px solid; }
+  .nivel-critico { background: var(--red-bg); border-color: var(--red-border); color: var(--red-text); }
+  .nivel-declarativo { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber-text); }
+  .nivel-parcial { background: var(--blue-bg); border-color: var(--blue-border); color: var(--blue-text); }
+  .nivel-sostenible { background: var(--green-bg); border-color: var(--green-border); color: var(--green-text); }
+
+  .nivel-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
+
+  .section-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 10px; }
+  .dim-bars { margin-bottom: 1.5rem; }
+  .db-row { display: grid; grid-template-columns: 180px 1fr 40px; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .db-name { font-size: 12px; color: var(--text-secondary); line-height: 1.3; }
+  .db-bar-wrap { background: var(--bg); border-radius: 2px; height: 5px; overflow: hidden; border: 0.5px solid var(--border); }
+  .db-bar { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .db-pct { font-size: 11px; color: var(--text-secondary); text-align: right; }
+
+  .verif-list { border-top: 0.5px solid var(--border); padding-top: 1.25rem; margin-bottom: 1.5rem; }
+  .verif-note { font-size: 11px; color: var(--text-tertiary); margin-bottom: 10px; }
+  .verif-item { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 0.5px solid var(--border); }
+  .verif-icon { font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+  .verif-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+
+  .recos { border-top: 0.5px solid var(--border); padding-top: 1.25rem; margin-bottom: 1.25rem; }
+  .reco-item { display: flex; gap: 8px; margin-bottom: 10px; align-items: flex-start; }
+  .reco-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 7px; }
+  .reco-text { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+  .footer-note { font-size: 11px; color: var(--text-tertiary); border-top: 0.5px solid var(--border); padding-top: 1rem; margin-top: 1rem; line-height: 1.6; }
+
+  .cite { margin-top: 3rem; padding: 1.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); border: 0.5px solid var(--border); font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
+  .cite strong { color: var(--text-primary); }
+
+  .sig { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 0.5px solid var(--border); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+
+  @media (max-width: 600px) {
+    .db-row { grid-template-columns: 1fr 80px 32px; }
+    .db-name { font-size: 11px; }
+    .q-options { gap: 4px; }
+    .q-btn { font-size: 11px; padding: 4px 10px; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="page">
+  <header class="site-header">
+    <div class="brand">archivistadigital.com · ISBN 9798251584622</div>
+    <h1>Instrumento de diagnóstico arquitectónico</h1>
+    <p>Pruebas estructurales para verificar el nivel de desacoplamiento en sistemas de gestión documental electrónica. 25 preguntas · 5 dimensiones · Resultado inmediato.</p>
+    <div class="nuclear">
+      <span class="nnode">Evento documental</span><span class="narrow">→</span>
+      <span class="nnode">Documento</span><span class="narrow">→</span>
+      <span class="nnode">Expediente</span><span class="narrow">→</span>
+      <span class="nnode">Clasificación (TRD)</span><span class="narrow">→</span>
+      <span class="nnode">Retención</span>
+    </div>
+    <div class="progress-global">
+      <div class="label"><span id="prog-label">0 de 25 preguntas respondidas</span><span id="prog-pct"></span></div>
+      <div class="pg-bar"><div class="pg-fill" id="pg-fill" style="width:0%"></div></div>
+    </div>
+  </header>
+
+  <div id="dims-container"></div>
+  <div id="results-container"></div>
+
+  <div class="cite">
+    <strong>Cómo citar este instrumento</strong><br>
+    González Flórez, J. A. (2026). <em>Instrumento de Diagnóstico Arquitectónico: Arquitecturas Acopladas y Desacopladas en Gestión Documental Electrónica.</em> GitHub. <a href="https://github.com/jhon-gonzalez/diagnostico-arquitectonico-sgdea" style="color:inherit">github.com/jhon-gonzalez/diagnostico-arquitectonico-sgdea</a><br><br>
+    Basado en: González Flórez, J. A. (2026). <em>Arquitecturas Acopladas y Desacopladas en Gestión Documental Electrónica: Cómo diseñar sistemas que sobrevivan al cambio institucional.</em> Independently published. ISBN 9798251584622.
+  </div>
+
+  <div class="sig">La trazabilidad no se negocia. La arquitectura se diseña.</div>
+</div>
+
+<script>
+const DIMS = [
+  {id:'d1',title:'Separación creación / clasificación',ref:'Criterio 1 — Cap. 5',questions:[
+    {text:'¿Los sistemas misionales producen documentos sin requerir seleccionar un código de serie o subserie de la TRD?',proof:'Un sistema acoplado bloquea la creación documental hasta que el usuario selecciona una serie. En arquitectura desacoplada, el evento se registra con metadatos funcionales mínimos, sin dependencia clasificatoria.'},
+    {text:'¿Puede eliminarse cualquier referencia a códigos de TRD del sistema misional sin interrumpir la producción documental?',proof:'La prueba consiste en imaginar retirar los campos de clasificación del sistema productor. Si el sistema dejaría de funcionar o los documentos perderían integridad, existe acoplamiento estructural.'},
+    {text:'¿La clasificación archivística se aplica como paso posterior a la creación del documento, no como condición previa?',proof:'En arquitectura desacoplada la clasificación es una capa de gobierno que se aplica sobre evidencia ya producida, no un filtro que habilita la creación.'},
+    {text:'¿Puede aplicarse una nueva versión de la TRD sin modificar la lógica interna del sistema productor?',proof:'Si actualizar la TRD exige intervención técnica en los sistemas misionales, la clasificación está incrustada como modelo de datos, no operando como capa independiente.'},
+    {text:'¿La TRD vigente puede actualizarse sin congelar o interrumpir la producción documental en sistemas misionales?',proof:'Indicador de acoplamiento: la entidad posterga actualizaciones de la TRD porque "afecta el sistema". Ese temor es la manifestación del acoplamiento.'},
+  ]},
+  {id:'d2',title:'Independencia del expediente',ref:'Criterio 2 — Cap. 5',questions:[
+    {text:'¿Puede modificarse o rediseñarse el proceso operativo (workflow) sin alterar la estructura histórica de los expedientes ya conformados?',proof:'En arquitectura frágil el expediente es el resultado del proceso. Si el flujo cambia, la memoria cambia. La independencia del expediente significa que su coherencia no depende de la estabilidad del proceso que lo generó.'},
+    {text:'¿Puede reconstruirse un expediente completo sin necesidad de reproducir o simular el workflow original?',proof:'Prueba directa: tomar un expediente de hace tres años e intentar leerlo sin acceder al módulo de workflow. Si no es posible interpretar su estructura, la memoria está subordinada al proceso.'},
+    {text:'¿El expediente existe como unidad lógica coherente independientemente del estado del trámite que lo originó?',proof:'Un expediente cuya coherencia depende de que el trámite esté "activo" o en un estado determinado del flujo no es una unidad estructural: es un subproducto operativo.'},
+    {text:'¿La consolidación del expediente responde a la finalidad administrativa que vincula los documentos, no al flujo que los procesó?',proof:'Criterio de conformación: los documentos pertenecen al expediente porque comparten una misma finalidad administrativa, no porque transitaron por el mismo workflow.'},
+    {text:'¿El SGDEA puede consolidar y presentar un expediente sin depender del estado actual o histórico del workflow asociado?',proof:'Verificación técnica: ¿el SGDEA puede consultar y exportar un expediente con sus documentos y metadatos esenciales sin invocar el motor de workflow?'},
+  ]},
+  {id:'d3',title:'Versionamiento formal de la TRD',ref:'Criterio 3 — Cap. 5',questions:[
+    {text:'¿Puede identificarse con precisión qué versión de la TRD estaba vigente en el momento en que se clasificó un expediente específico?',proof:'La ausencia de versionamiento formal significa que no existe registro de qué criterio archivístico estaba vigente en un momento dado. Esto compromete la auditoría y el valor probatorio de la clasificación.'},
+    {text:'¿Las versiones históricas de la TRD están documentadas formalmente como instrumento institucional, no solo dentro del sistema del proveedor?',proof:'Si las versiones solo existen dentro del proveedor tecnológico, la institución no controla la historia de sus criterios archivísticos. El versionamiento debe ser una capa institucional, no una funcionalidad del proveedor.'},
+    {text:'¿Puede actualizarse la TRD y aplicar la nueva versión prospectivamente sin reprocesar los expedientes históricos ya clasificados?',proof:'En arquitectura acoplada, cada actualización de TRD exige decisiones sobre expedientes históricos. En arquitectura desacoplada, las nuevas versiones aplican hacia adelante; los expedientes pasados conservan el contexto de la versión bajo la que fueron clasificados.'},
+    {text:'¿Puede versionarse la TRD sin intervención técnica profunda del proveedor del SGDEA?',proof:'Indicador de soberanía arquitectónica: si actualizar la TRD requiere solicitar al proveedor que "parametrice" la nueva versión, la autoridad archivística está delegada a la herramienta.'},
+    {text:'¿Coexisten actualmente múltiples versiones de la TRD en el sistema, permitiendo identificar bajo cuál fue clasificado cada expediente?',proof:'Prueba de estado actual: ¿el sistema muestra la versión de TRD asociada a cada expediente, o solo la versión vigente? La ausencia de versionamiento activo es el inicio del congelamiento del instrumento archivístico.'},
+  ]},
+  {id:'d4',title:'Patrón común de integración',ref:'Criterio 4 — Cap. 5',questions:[
+    {text:'¿Existe un protocolo único y documentado de integración aplicable a cualquier sistema productor que deba transferir evidencia al núcleo documental?',proof:'En arquitecturas frágiles, cada integración se diseña ad hoc. Un patrón común exige: registrar evento en origen → generar documento con metadatos mínimos → transferir al núcleo → no replicar clasificación ni retención.'},
+    {text:'¿Puede incorporarse un nuevo sistema misional al ecosistema documental sin rediseñar el modelo nuclear del SGDEA?',proof:'Si cada nueva integración exige intervenir el núcleo, la arquitectura no escala. La sostenibilidad no depende de la primera integración: depende de la décima.'},
+    {text:'¿Los sistemas misionales transfieren documentos al SGDEA sin replicar lógica de clasificación ni reglas de retención en su propia estructura?',proof:'Un sistema misional que contiene campos de código de serie, subserie o tablas de retención replicadas introduce un segundo punto de gobierno archivístico. Eso es fragmentación estructural.'},
+    {text:'¿El patrón de integración está formalizado como requisito institucional exigible a nuevos proveedores y sistemas?',proof:'El patrón debe existir como documento institucional, no como práctica informal. Si depende del "criterio del proveedor" de turno, no hay control arquitectónico.'},
+    {text:'¿Los sistemas productores generan metadatos funcionales mínimos suficientes para la contextualización posterior, sin incluir metadatos archivísticos?',proof:'Distinción crítica: los metadatos funcionales (fecha, usuario, sistema origen, identificador del evento) son responsabilidad del sistema productor. Los metadatos archivísticos (serie, subserie, versión TRD) son responsabilidad del SGDEA. Mezclarlos produce acoplamiento.'},
+  ]},
+  {id:'d5',title:'Gobernanza de metadatos y soberanía',ref:'Criterio 5 + Cap. 6',questions:[
+    {text:'¿Pueden exportarse expedientes completos, con todos sus metadatos esenciales, sin depender de herramientas o accesos propietarios del proveedor?',proof:'Prueba de soberanía: si la exportación completa de un expediente requiere un módulo, API o intervención del proveedor, la institución no controla su propia memoria. La independencia tecnológica comienza en la capacidad de exportar.'},
+    {text:'¿Puede interpretarse la estructura de un expediente (qué documentos lo componen, en qué orden, bajo qué criterio) fuera de la plataforma original?',proof:'Un expediente cuya estructura solo puede interpretarse dentro del sistema del proveedor tiene dependencia contextual. En 10–15 años, cuando la plataforma haya cambiado, esa dependencia se convierte en pérdida de valor probatorio.'},
+    {text:'¿Los metadatos funcionales, estructurales y archivísticos están distinguidos y gestionados en capas separadas?',proof:'Tres capas diferenciadas: funcionales (del sistema productor), estructurales (del expediente), archivísticos (de clasificación y retención). Su mezcla produce interpretaciones dependientes de estructuras propietarias.'},
+    {text:'¿Puede el Archivo institucional auditar la clasificación y retención de cualquier expediente sin requerir acceso técnico al proveedor?',proof:'La autoridad archivística debe ser operacionalmente independiente de la herramienta. Si el Archivo necesita al proveedor para auditar sus propios criterios, la soberanía está comprometida.'},
+    {text:'¿Está documentado un registro auditable de las reglas de retención y sus versiones, separado del sistema que las aplica?',proof:'Condición de preservación: las reglas de retención deben existir como capa institucional documentada, no solo como automatismos técnicos dentro de aplicaciones funcionales. Su pérdida implica incapacidad de justificar decisiones de disposición final.'},
+  ]},
+];
+
+const OPTS=[
+  {label:'Sí, completamente',val:4,cls:'sel-si'},
+  {label:'Parcialmente',val:2,cls:'sel-parcial'},
+  {label:'No',val:0,cls:'sel-no'},
+  {label:'No aplica',val:'na',cls:'sel-na'},
+];
+
+const VERIF_Q=[
+  '¿Puede el sistema misional operar sin conocer la estructura detallada de la TRD?',
+  '¿Puede el SGDEA consolidar expedientes sin depender del workflow original?',
+  '¿Puede el Archivo actualizar la TRD sin intervención directa del proveedor?',
+  '¿Puede incorporarse un nuevo sistema productor sin rediseñar el núcleo?',
+  '¿Puede reconstruirse un expediente dentro de 15 años sin el proveedor original?',
+];
+
+const state={};
+DIMS.forEach(d=>d.questions.forEach((_,i)=>{state[d.id+'_'+i]=null;}));
+
+function dimScore(id){
+  const dim=DIMS.find(d=>d.id===id);
+  let s=0,m=0;
+  dim.questions.forEach((_,i)=>{
+    const v=state[id+'_'+i];
+    if(v===null||v==='na')return;
+    s+=v; m+=4;
+  });
+  return{score:s,max:m,pct:m>0?Math.round(s/m*100):0};
+}
+
+function totalAnswered(){return Object.values(state).filter(v=>v!==null).length;}
+
+function totalScore(){
+  let t=0,mt=0;
+  DIMS.forEach(d=>{const{score,max}=dimScore(d.id);t+=score;mt+=max;});
+  return mt>0?Math.round(t/mt*100):0;
+}
+
+function answered(id){return DIMS.find(d=>d.id===id).questions.filter((_,i)=>state[id+'_'+i]!==null).length;}
+
+function nivelInfo(pct){
+  if(pct<=30)return{label:'Acoplamiento crítico',cls:'nivel-critico',dot:'#E24B4A',
+    desc:'El sistema no sobrevivirá cambios institucionales mayores sin intervención estructural urgente. La deuda arquitectónica es crítica.',
+    recos:[
+      {c:'#E24B4A',t:'Realizar diagnóstico arquitectónico completo antes de cualquier migración o nueva integración. El cambio de herramienta sin corrección estructural replicará el problema.'},
+      {c:'#E24B4A',t:'Identificar los puntos de replicación de TRD en sistemas misionales y planificar su retiro progresivo. Comenzar por los sistemas con mayor volumen documental.'},
+      {c:'#E24B4A',t:'Establecer un inventario de expedientes cuya coherencia depende exclusivamente del workflow actual. Es el pasivo estructural más urgente a gestionar.'},
+    ]};
+  if(pct<=55)return{label:'Desacoplamiento declarativo',cls:'nivel-declarativo',dot:'#BA7517',
+    desc:'Existe intención de separación pero persisten acoplamientos estructurales que generarán deuda técnica acumulativa.',
+    recos:[
+      {c:'#BA7517',t:'Iniciar Fase 1 del modelo de transición: centralización de la clasificación y retiro de lógica archivística de sistemas misionales.'},
+      {c:'#BA7517',t:'Documentar formalmente las versiones históricas de la TRD como instrumento institucional independiente del proveedor.'},
+      {c:'#BA7517',t:'Formalizar el patrón común de integración como requisito contractual para nuevas incorporaciones tecnológicas.'},
+    ]};
+  if(pct<=79)return{label:'Desacoplamiento parcial',cls:'nivel-parcial',dot:'#378ADD',
+    desc:'El núcleo está parcialmente estabilizado. Existen fases de transición pendientes identificables y gestionables.',
+    recos:[
+      {c:'#378ADD',t:'Completar el versionamiento formal de la TRD y garantizar que cada expediente registre la versión vigente al momento de clasificación.'},
+      {c:'#378ADD',t:'Verificar independencia del expediente frente al flujo e implementar exportación estructurada sin dependencia del proveedor.'},
+      {c:'#378ADD',t:'Documentar el patrón de integración como requisito institucional exigible en futuros procesos de contratación.'},
+    ]};
+  return{label:'Arquitectura sostenible',cls:'nivel-sostenible',dot:'#1D9E75',
+    desc:'El sistema cumple las condiciones estructurales para sobrevivir al cambio institucional en un horizonte de 10–15 años.',
+    recos:[
+      {c:'#1D9E75',t:'Mantener monitoreo continuo de los indicadores de deuda técnica estructural definidos en el Criterio 6 (Capítulo 5).'},
+      {c:'#1D9E75',t:'Aplicar las pruebas estructurales ante cada nueva integración o reforma normativa para prevenir reacoplamiento progresivo.'},
+      {c:'#1D9E75',t:'Documentar la arquitectura actual como línea base para futuras auditorías y procesos de preservación digital.'},
+    ]};
+}
+
+function barColor(pct){return pct>=80?'#1D9E75':pct>=56?'#378ADD':pct>=31?'#BA7517':'#E24B4A';}
+
+function render(){
+  const dc=document.getElementById('dims-container');
+  dc.innerHTML='';
+  const tot=totalAnswered();
+  document.getElementById('prog-label').textContent=`${tot} de 25 preguntas respondidas`;
+  document.getElementById('pg-fill').style.width=Math.round(tot/25*100)+'%';
+  if(tot>0) document.getElementById('prog-pct').textContent=Math.round(tot/25*100)+'%';
+
+  DIMS.forEach((dim,di)=>{
+    const{pct}=dimScore(dim.id);
+    const ans=answered(dim.id);
+    const card=document.createElement('div');
+    card.className='dim-card';
+    card.innerHTML=`
+      <div class="dim-header" onclick="toggleDim('${dim.id}')">
+        <div class="dim-num">${di+1}</div>
+        <div style="flex:1">
+          <div class="dim-title">${dim.title}</div>
+          <div style="font-size:11px;color:var(--text-tertiary)">${dim.ref}</div>
+        </div>
+        <div class="dim-meta">${ans}/${dim.questions.length}</div>
+        <div class="dim-toggle" id="tog-${dim.id}">▼</div>
+      </div>
+      <div class="dim-prog"><div class="dim-prog-fill" style="width:${pct}%;background:${barColor(pct)}"></div></div>
+      <div class="questions" id="q-${dim.id}">
+        ${dim.questions.map((q,qi)=>{
+          const cur=state[dim.id+'_'+qi];
+          return`<div class="q-item">
+            <div class="q-num">Pregunta ${qi+1} de 5</div>
+            <div class="q-text">${q.text}</div>
+            <details class="q-proof-wrap">
+              <summary class="q-proof-summary">Fundamento de la prueba</summary>
+              <div class="q-proof-body">${q.proof}</div>
+            </details>
+            <div class="q-options">
+              ${OPTS.map(o=>`<button class="q-btn ${cur===o.val?o.cls:''}" onclick="setAns('${dim.id}',${qi},'${o.val}')">${o.label}</button>`).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+    dc.appendChild(card);
+  });
+
+  const firstOpen=document.querySelector('.questions');
+  if(firstOpen&&!document.querySelector('.questions.open')){
+    firstOpen.classList.add('open');
+    const tog=document.getElementById('tog-d1');
+    if(tog)tog.classList.add('open');
+  }
+
+  updateResults();
+}
+
+function toggleDim(id){
+  const q=document.getElementById('q-'+id);
+  const t=document.getElementById('tog-'+id);
+  const isOpen=q.classList.contains('open');
+  document.querySelectorAll('.questions').forEach(el=>el.classList.remove('open'));
+  document.querySelectorAll('.dim-toggle').forEach(el=>el.classList.remove('open'));
+  if(!isOpen){q.classList.add('open');t.classList.add('open');}
+}
+
+function setAns(dimId,qi,val){
+  const parsed=val==='na'?'na':(val==='null'?null:parseInt(val));
+  state[dimId+'_'+qi]=parsed;
+  render();
+  const openDim=document.querySelector('.questions.open');
+  if(openDim){
+    const items=openDim.querySelectorAll('.q-item');
+    const nextIdx=qi+1;
+    if(nextIdx<items.length){
+      setTimeout(()=>items[nextIdx].scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+    }
+  }
+}
+
+function updateResults(){
+  const rc=document.getElementById('results-container');
+  const tot=totalAnswered();
+  if(tot<5){rc.innerHTML='';return;}
+  const pct=totalScore();
+  const nivel=nivelInfo(pct);
+
+  const dimRows=DIMS.map(dim=>{
+    const{pct:dp}=dimScore(dim.id);
+    return`<div class="db-row">
+      <div class="db-name">${dim.title}</div>
+      <div class="db-bar-wrap"><div class="db-bar" style="width:${dp}%;background:${barColor(dp)}"></div></div>
+      <div class="db-pct">${dp}%</div>
+    </div>`;
+  }).join('');
+
+  const verifItems=VERIF_Q.map((q,i)=>{
+    const{pct:dp}=dimScore(DIMS[i].id);
+    const ok=dp>=56;
+    return`<div class="verif-item">
+      <div class="verif-icon" style="color:${ok?'#1D9E75':'#E24B4A'}">${ok?'✓':'✗'}</div>
+      <div class="verif-text">${q}</div>
+    </div>`;
+  }).join('');
+
+  rc.innerHTML=`<div class="results-panel">
+    <div class="results-title">Resultado del diagnóstico</div>
+    <div class="result-grid">
+      <div class="r-card"><div class="r-label">Puntuación global</div><div class="r-val">${pct}%</div><div class="r-sub">de 100 posibles</div></div>
+      <div class="r-card"><div class="r-label">Preguntas respondidas</div><div class="r-val">${tot}</div><div class="r-sub">de 25 totales</div></div>
+      <div class="r-card"><div class="r-label">Dimensiones evaluadas</div><div class="r-val">${DIMS.filter(d=>answered(d.id)>0).length}</div><div class="r-sub">de 5 dimensiones</div></div>
+    </div>
+    <div class="nivel-badge ${nivel.cls}">${nivel.label}</div>
+    <p class="nivel-desc">${nivel.desc}</p>
+    <div class="dim-bars">
+      <div class="section-label">Puntuación por dimensión</div>
+      ${dimRows}
+    </div>
+    <div class="verif-list">
+      <div class="section-label">Verificación de desacoplamiento — 5 preguntas clave</div>
+      <p class="verif-note">Si todas son afirmativas, el desacoplamiento es real. Si alguna es negativa, es declarativo.</p>
+      ${verifItems}
+    </div>
+    <div class="recos">
+      <div class="section-label">Recomendaciones prioritarias</div>
+      ${nivel.recos.map(r=>`<div class="reco-item"><div class="reco-dot" style="background:${r.c}"></div><div class="reco-text">${r.t}</div></div>`).join('')}
+    </div>
+    <div class="footer-note">
+      Instrumento basado en los criterios técnicos del Capítulo 5 y el Modelo Operativo del Capítulo 4 de:<br>
+      González Flórez, J. A. (2026). <em>Arquitecturas Acopladas y Desacopladas en Gestión Documental Electrónica.</em> ISBN 9798251584622.<br>
+      <a href="https://www.archivistadigital.com" style="color:inherit">archivistadigital.com</a> · <a href="https://github.com/jhon-gonzalez/diagnostico-arquitectonico-sgdea" style="color:inherit">github.com/jhon-gonzalez/diagnostico-arquitectonico-sgdea</a>
+    </div>
+  </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
 
