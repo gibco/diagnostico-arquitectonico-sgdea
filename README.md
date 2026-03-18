@@ -13,7 +13,7 @@
 
 Este repositorio es la extensión práctica del libro:
 
-**[Arquitecturas Acopladas y Desacopladas en Gestión Documental Electrónica: Cómo diseñar sistemas que sobrevivan al cambio institucional](https://www.archivistadigital.com)**  
+**[Arquitecturas Acopladas y Desacopladas en Gestión Documental Electrónica: Cómo diseñar sistemas que sobrevivan al cambio institucional](http://www.archivistadigital.com)**  
 *Jhon Alexander González Flórez — ISBN 9798251584622*
 
 El libro define los criterios de diseño. Este instrumento los hace verificables.
@@ -162,8 +162,11 @@ Puedes usarlo y adaptarlo libremente con fines no comerciales, siempre que cites
 **Jhon Alexander González Flórez**  
 Consultor especializado en Gestión Documental Electrónica, Preservación Digital y Accesibilidad Web.
 
-🌐 [archivistadigital.com](https://www.archivistadigital.com)  
-📚 [Patreon: ArchivistaDigital](https://www.patreon.com/c/ArchivistaDigital)
+[archivistadigital.com](http://www.archivistadigital.com)  
+[Patreon: ArchivistaDigital](https://www.patreon.com/c/ArchivistaDigital)
+[Linkedin: ArchivistaDigital](https://www.linkedin.com/newsletters/archivista-digital-7268276454386196480/)
+
+
 
 ---
 
