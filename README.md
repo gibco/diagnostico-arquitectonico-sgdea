@@ -62,7 +62,7 @@ Cada nivel cumple una función distinta y pertenece a una capa diferente de resp
 
 El instrumento de diagnóstico está disponible en:
 
-🔗 **[https://jhon-gonzalez.github.io/diagnostico-arquitectonico-sgdea/instrumento/](https://jhon-gonzalez.github.io/diagnostico-arquitectonico-sgdea/instrumento/)**
+🔗 **[https://gibco.github.io/diagnostico-arquitectonico-sgdea/instrumento/)**
 
 Evalúa 5 dimensiones estructurales con 25 pruebas verificables y genera:
 
